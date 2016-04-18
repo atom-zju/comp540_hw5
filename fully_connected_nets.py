@@ -423,7 +423,7 @@ small_data = {
   'y_val': data['y_val'],
 }
 
-
+[]
 learning_rate = 1e-3
 weight_scale = 1e-5
 

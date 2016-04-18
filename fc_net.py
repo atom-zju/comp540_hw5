@@ -46,10 +46,12 @@ class TwoLayerNet(object):
     ############################################################################
     # 4 lines of code expected
     self.params['theta1'] = np.random.normal(0,weight_scale,(input_dim,hidden_dim))
-    self.params['theta1_0'] = np.zeros(hidden_dim)
+    #self.params['theta1_0'] = np.zeros(hidden_dim)
+    self.params['theta1_0'] = np.zeros(self.params['theta1'].shape[1])
     self.params['theta2'] = np.random.normal(0,weight_scale,(hidden_dim,num_classes))
-    self.params['theta2_0'] = np.zeros(num_classes)
-    pass
+    #self.params['theta2_0'] = np.zeros(num_classes)
+    self.params['theta2_0'] = np.zeros(self.params['theta2'].shape[1])
+    #pass
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -82,8 +84,9 @@ class TwoLayerNet(object):
     # Hint: unpack the weight parameters from self.params
     # 3 lines of code expected
 
-    out, cache = affine_relu_forward(X,self.params['theta1'],self.params['theta1_0'])
-    output, cache = affine_forward(out,self.params['theta2'],self.params['theta2_0'])
+    aff_relu_out, aff_relu_cache = affine_relu_forward(X,self.params['theta1'],self.params['theta1_0'])
+    aff_output, aff_cache = affine_forward(out,self.params['theta2'],self.params['theta2_0'])
+    output = aff_output
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -104,9 +107,16 @@ class TwoLayerNet(object):
     # of 0.5 to simplify the expression for the gradient.                      #
     ############################################################################
     # 8 lines of code expected
-    loss, dx = softmax_loss(output,y)
-    affine_backward(loss,)
+    sftm_loss, sftm_grad = softmax_loss(output,y)
 
+    loss += sftm_loss + .5*self.reg*np.sum(self.params['theta1']*self.params['theta1'])
+    loss += .5*self.reg*np.sum(self.params['theta2']*self.params['theta2'])
+
+    dx_1, grads['theta2'], grads['theta2_0'] = affine_backward(sftm_grad,aff2_cache)
+    dx_2, grads['theta1'], grads['theta1_0'] = affine_relu_backward(dx_1,aff_relu_cache)
+
+    grads['theta1'] += self.reg*self.params['theta1']
+    grads['theta2'] += self.reg*self.params['theta2']
 
     pass
     ############################################################################
@@ -163,7 +173,16 @@ class FullyConnectedNet(object):
     # initialized to zero.                                                     #
     ############################################################################
     # 7 lines of code expected
+    self.N = input_dim
+    self.C = num_classes
+    dims = [self.N] + hidden_dims + [self.C]
+    thetaX = {'theta' + str(i + 1):
+      weight_scale * np.random.randn(dims[i], dims[i + 1]) for i in range(len(dims) - 1)}
+    thetaX_X = {'theta' + str(i + 1): np.zeros(dims[i + 1])
+      for i in range(len(dims) - 1)}
 
+    self.params.update(thetaX)
+    self.params.update(thetaX_X)
     pass
     ############################################################################
     #                             END OF YOUR CODE                             #
@@ -190,7 +209,15 @@ class FullyConnectedNet(object):
     #                                                                          #
     ############################################################################
     # 6 lines of code expected.
+    input_data = X
+    for layer in range(self.num_layers - 1):
+      thetaX = 'theta' + str(layer+1)
+      thetaX_X = 'theta' + str(layer+1)+'_0'
 
+
+    out, cache = affine_relu_backward(input_data, self.params[])
+    out, aff_cache = affine_forward(input_data,self.params[thetaX],self.params[thetaX_X])
+    output = out
     pass
     ############################################################################
     #                             END OF YOUR CODE                             #
@@ -213,6 +240,24 @@ class FullyConnectedNet(object):
     # of 0.5 to simplify the expression for the gradient.                      #
     ############################################################################
     # 10-12 lines of code expected
+    sftm_loss, sftm_grad = softmax_loss(output,y)
+    loss += sftm_loss
+    for layer in range(self.num_layers):
+      thetaX = 'theta' + str(layer+1)
+      loss += .5*self.reg*np.sum(self.param[thetaX]*self.params[thetaX])
+
+    #calculateing gradient
+    thetaX = 'theta'+ str(self.num_layers)
+    thetaX_X = 'theta' + str(self.num_layers)+'_0'
+    dx, grads[thetaX], grads[thetaX_X] = affine_backward(sftm_grad, aff_cache)
+    grads[thetaX] += self.reg*self.params[thetaX]
+
+    for layer in range(self.num_layers-1)[::-1]
+      thetaX = 'theta' + str(layer+1)
+      thetaX_X = 'theta' + str(layer+1)+'_0'
+
+    dx, grads[thetaX], grads[thetaX_X]=affine_relu_backward(dx, output[layer]['cache'])
+    grads['dx']=dx
 
 
 
